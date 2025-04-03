@@ -58,7 +58,7 @@ echo "$MODULE, VERSION: $VERSION, APP_VERSION: $APP_VERSION"
 
 # build & publish chart as oci
 # set version in Chart.yaml & values.yaml (using go-yq) not needed because the version of the image is set to appVersion, and the version (& appVersion) are set via cli during the package
-helm build dependencies "${MODULE}"
+helm dependency build "${MODULE}"
 helm package -d build "${MODULE}" --app-version "$APP_VERSION" --version "$VERSION"
 helm push "build/${MODULE}-${VERSION}.tgz" oci://ghcr.io/cdviz-dev/charts
 """
