@@ -7,12 +7,12 @@ sidecar:
     enabled: true
     searchNamespace: ALL
     label: grafana_dashboard
-    labelValue: 1
+    labelValue: "1"
   datasources:
     enabled: true
     searchNamespace: ALL
     label: grafana_datasource
-    labelValue: 1
+    labelValue: "1"
 
 plugins:
   - marcusolsson-dynamictext-panel
