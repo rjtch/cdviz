@@ -20,18 +20,14 @@ run = [
 
 [tasks."apply"]
 description = "apply the schema & data migrations"
-run = [
-  "atlas migrate apply --env db-local",
-]
+run = "atlas migrate apply --env db-local"
 
 # cmd: atlas schema apply --env local
 
 [tasks."db-local:start-empty"]
 depends = ["build:cdviz-db-pg"]
 description = "start a container for the local db (empty: no data, no schema)"
-run = [
-  "mise run db-local:stop",
-  """docker run --name cdviz-db \
+run = ["mise run db-local:stop", """docker run --name cdviz-db \
     -e \"POSTGRES_PASSWORD=$PG_LOCAL_PWD\" \
     -e \"POSTGRES_USER=$PG_LOCAL_USER\" \
     -p 5432:5432 \
@@ -39,16 +35,11 @@ run = [
     ghcr.io/cdviz-dev/cdviz-db-pg:latest \
     postgres \
     -c "shared_preload_libraries=timescaledb"
-  """,
-  "sleep 3 # wait for the container to be ready",
-]
+  """, "sleep 3 # wait for the container to be ready"]
 
 [tasks."db-local:start"]
 description = "start a container for the local db with the migrations applied"
-run = [
-  "mise run db-local:start-empty",
-  "mise run apply",
-]
+run = ["mise run db-local:start-empty", "mise run apply"]
 
 [tasks."db-local:stop"]
 description = "stop the container of the local db"
@@ -74,7 +65,7 @@ run = [
 
 [tasks."list:containers"]
 description = "list all containers images"
-run = ["""docker image ls --tree --filter "reference=*/*/cdviz-db*""""]
+run = "docker image ls --tree --filter 'reference=*/*/cdviz-db*'"
 
 [tasks."debug:bake"]
 description = "show the 'resovled' bake definition"

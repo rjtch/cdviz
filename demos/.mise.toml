@@ -3,7 +3,7 @@ CLUSTER_NAME = "kind-local"
 
 [tools]
 # docker = "latest"      # to build, to run containers, should be available for some of thoses tools
-"ubi:cdviz-dev/cdviz-collector" = "0.5.1"
+"ubi:cdviz-dev/cdviz-collector" = "latest"
 kubectl = "1.32.0"                                                    # to interact with k8s cluster
 ctlptl = "0.8"                                                        # to setup / manage local k8s (kind) cluster
 kind = "0.27.0"                                                       # to have a local k8s cluster (on top of docker)
@@ -16,33 +16,30 @@ depends = ["stack:*:delete"]
 [tasks."stack:compose:up"]
 description = "Launch the docker compose demo (in foreground)"
 dir = "stack-compose"
-run = [
-    """
+run = """
     mkdir -p tmp/postgres/data || true
     export MY_UID=$(id -u)
     export MY_GID=$(id -g)
     chown -R \"$MY_UID:$MY_GID\" tmp
     docker compose -f docker-compose.yaml up
-    """,
-]
+    """
 
 [tasks."stack:compose:down"]
 description = "Stop the docker compose demo"
 dir = "stack-compose"
-run = ["""
+run = """
   export MY_UID=$(id -u)
   export MY_GID=$(id -g)
   docker compose -f docker-compose.yaml stop
   """
-]
 
 [tasks."stack:compose:delete"]
 description = "Stop & remove the docker compose demo (and local data)"
 dir = "stack-compose"
 run = [
-    "mise run stack:compose:down",
-    "docker compose -f docker-compose.yaml rm",
-    "rm -rf tmp",
+  "mise run stack:compose:down",
+  "docker compose -f docker-compose.yaml rm",
+  "rm -rf tmp",
 ]
 
 [tasks."stack:grafana:view"]
@@ -58,21 +55,21 @@ description = "Launch cdviz-collector cli with content (data & configuration) of
 dir = "use_cases"
 env = { OTEL_TRACES_SAMPLER = "always_off", OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "http://127.0.0.1:4317", CDVIZ_COLLECTOR__SINKS__DEBUG__ENABLED = "false" }
 run = [
-    "cdviz-collector connect -vv --config ./cdviz-collector.toml",
-    # - export UID=$(id -u)
-    # - export GID=$(id -g)
-    # - echo ">> $UID -- $GID"
-    # - mkdir -p tmp/grafana/data || true
-    # RUST_LOG: "cdviz_collector::sinks=debug,info" # cdviz_collector::sources=debug
+  "cdviz-collector connect -vv --config ./cdviz-collector.toml",
+  # - export UID=$(id -u)
+  # - export GID=$(id -g)
+  # - echo ">> $UID -- $GID"
+  # - mkdir -p tmp/grafana/data || true
+  # RUST_LOG: "cdviz_collector::sinks=debug,info" # cdviz_collector::sources=debug
 ]
 
 [tasks."stack:k8s:create"]
 description = "Create a k8s cluster (kind)"
 dir = "stack-k8s"
 run = [
-    "ctlptl create registry ctlptl-registry --port=5005",
-    "ctlptl create cluster kind --name \"$CLUSTER_NAME\" --registry=ctlptl-registry",
-    "kubectl cluster-info --context \"$CLUSTER_NAME\"",
+  "ctlptl create registry ctlptl-registry --port=5005",
+  "ctlptl create cluster kind --name \"$CLUSTER_NAME\" --registry=ctlptl-registry",
+  "kubectl cluster-info --context \"$CLUSTER_NAME\"",
 ]
 [tasks."stack:k8s:use-context"]
 description = "Use the k8s cluster (kind) context"
@@ -85,12 +82,12 @@ description = "Deploy the pre-requirement for cdviz (postgresql, grafana, ...) o
 depends = ["stack:k8s:use-context"]
 dir = "stack-k8s"
 run = [
-    "helmwave up --build --progress --skip-unchanged -t pre-req",
-    # to avoid a certificate x509 error, we need to restart the deployment (or kill the pod)
-    # cause by wrong order of creation webhooks,..
-    # see https://github.com/cloudnative-pg/cloudnative-pg/issues/3088
-    "kubectl rollout restart deployments/cnpg-cloudnative-pg -n cnpg",
-    "# look at the logs to have some instructions to connect to the services, retrieve the passwords,...",
+  "helmwave up --build --progress --skip-unchanged -t pre-req",
+  # to avoid a certificate x509 error, we need to restart the deployment (or kill the pod)
+  # cause by wrong order of creation webhooks,..
+  # see https://github.com/cloudnative-pg/cloudnative-pg/issues/3088
+  "kubectl rollout restart deployments/cnpg-cloudnative-pg -n cnpg",
+  "# look at the logs to have some instructions to connect to the services, retrieve the passwords,...",
 ]
 
 [tasks."stack:k8s:delete:pre-req"]
@@ -105,27 +102,31 @@ depends = ["stack:k8s:use-context"]
 wait_for = ["stack:k8s:deploy:pre-req"]
 dir = "stack-k8s"
 run = [
-    "kubectl create namespace cdviz-dev || true",
-    "helmwave up --build --progress --skip-unchanged -t cdviz",
+  "kubectl create namespace cdviz-dev || true",
+  "helmwave up --build --progress --skip-unchanged -t cdviz",
 ]
 
 [tasks."stack:k8s:delete:cdviz"]
 description = "Delete cdviz stack (cdviz-collector, cdviz-db) on a k8s cluster"
 depends = ["stack:k8s:use-context"]
 dir = "stack-k8s"
-run = ["helmwave down --build  -t cdviz", "kubectl delete namespace cdviz-dev || true"]
+run = [
+  "helmwave down --build  -t cdviz",
+  "kubectl delete namespace cdviz-dev || true",
+]
 
-[tasks."stack:k8s:deploy:integration"]
-description = "Deploy the integrations app (kubewatch,...) on a k8s cluster"
-depends = ["stack:k8s:use-context"]
-dir = "stack-k8s"
-run = ["helmwave up --build --progress --skip-unchanged -t integration"]
+# [tasks."stack:k8s:deploy:integration"]
+# description = "Deploy the integrations app (kubewatch,...) on a k8s cluster"
+# depends = ["stack:k8s:use-context"]
+# wait_for = ["stack:k8s:deploy:pre-req"]
+# dir = "stack-k8s"
+# run = ["helmwave up --build --progress --skip-unchanged -t integration"]
 
-[tasks."stack:k8s:delete:integration"]
-description = "Delete the integrations app (kubewatch,...) on a k8s cluster"
-depends = ["stack:k8s:use-context"]
-dir = "stack-k8s"
-run = ["helmwave down --build  -t integration"]
+# [tasks."stack:k8s:delete:integration"]
+# description = "Delete the integrations app (kubewatch,...) on a k8s cluster"
+# depends = ["stack:k8s:use-context"]
+# dir = "stack-k8s"
+# run = ["helmwave down --build  -t integration"]
 
 [tasks."stack:k8s:port-forward:grafana"]
 description = "Port-forward the Grafana dashboard to localhost:3000"
@@ -136,7 +137,7 @@ run = ["kubectl port-forward svc/grafana -n grafana 3000:80"]
 description = "Show the Grafana admin password"
 depends = ["stack:k8s:use-context"]
 run = [
-    'kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo',
+  'kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo',
 ]
 
 [tasks."stack:k8s:port-forward:cdviz-db"]
@@ -158,8 +159,8 @@ description = "Delete a k8s cluster (kind) and its resources"
 depends = ["stack:k8s:delete:*"]
 dir = "stack-k8s"
 run = [
-    "ctlptl delete cluster \"$CLUSTER_NAME\"",
-    "ctlptl delete registry ctlptl-registry",
+  "ctlptl delete cluster \"$CLUSTER_NAME\"",
+  "ctlptl delete registry ctlptl-registry",
 ]
 
 [tasks."stack:k8s:check"]
