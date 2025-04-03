@@ -1,0 +1,19 @@
+{{ $baseName := (printf "%s-migration" (.ReleaseName | default .Chart.Name) | replace "+" "-" | replace "." "-" | trunc 63 | trimSuffix "-") }}
+
+the migration is scheduled by a cronjob, you can trigger it manually with:
+
+```shell
+kubectl create job --from=cronjob/{{ $baseName }} {{ $baseName }}-manual-trigger -n {{ .Release.Namespace }}
+```
+
+And after completion, you can check the logs with:
+
+```shell
+kubectl logs -l app.kubernetes.io/name={{ $baseName }}-manual-trigger -n {{ .Release.Namespace }}
+```
+
+And after completion, you can delete the job with:
+
+```shell
+kubectl delete job {{ $baseName }}-manual-trigger -n {{ .Release.Namespace }}
+```
