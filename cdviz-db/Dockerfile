@@ -5,7 +5,7 @@ ARG PG_MAJOR=${PG_VERSION%%.*}
 #---------------------------------------------------------------------------------------------------
 # checkov:skip=CKV_DOCKER_7:Ensure the base image uses a non latest version tag
 # trivy:ignore:AVD-DS-0001
-FROM --platform=$BUILDPLATFORM alpine:3 AS cdviz-db-migration
+FROM --platform=$BUILDPLATFORM arigaio/atlas:0.32.0-community-alpine AS cdviz-db-migration
 LABEL org.opencontainers.image.source="https://github.com/cdviz-dev/cdviz"
 LABEL org.opencontainers.image.licenses="MIT OR Apache-2.0"
 
@@ -25,9 +25,6 @@ RUN adduser \
 USER nonroot
 
 COPY --chown=$USER migrations /migrations
-COPY --chown=$USER --chmod=555 --from=arigaio/atlas:0.30.0-community-alpine /atlas /atlas
-HEALTHCHECK NONE
-ENTRYPOINT ["/atlas"]
 
 #---------------------------------------------------------------------------------------------------
 # Create the image for the database = cloudnative-pg (postgresql + barman + ...) + timescaledb
