@@ -11,6 +11,7 @@ kubectl = "1.32.0" # to interact with k8s cluster
 
 [tasks."lint:cdviz-collector"]
 run = [
+  "helm dependency update cdviz-collector",
   "helm lint cdviz-collector",
   "helm template ./cdviz-collector | kubectl apply --dry-run=client -f -",
 ]
