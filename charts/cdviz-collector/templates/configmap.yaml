@@ -6,5 +6,5 @@ data:
 {{ (.Files.Glob "config_files/**").AsConfig | indent 2 }}
 {{- range $path, $content :=  .Values.configFiles }}
   {{ $path | quote }}: |
-    {{ $content | nindent 4 }}
+    {{ tpl $content $ | nindent 4 }}
 {{- end }}

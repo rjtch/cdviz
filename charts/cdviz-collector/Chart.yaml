@@ -10,3 +10,9 @@ keywords:
 home: https://cdviz.dev/
 sources:
   - https://github.com/cdviz-dev/cdviz
+
+dependencies:
+  - name: kubewatch
+    version: 3.5.0
+    repository: https://robusta-charts.storage.googleapis.com
+    condition: kubewatch.enabled

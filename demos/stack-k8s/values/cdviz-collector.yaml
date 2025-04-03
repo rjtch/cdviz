@@ -1,4 +1,8 @@
 env:
+  CDVIZ_COLLECTOR__SINKS__DEBUG__ENABLED:
+    value: "true"
+  CDVIZ_COLLECTOR__SINKS__CDVIZ_DB__ENABLED:
+    value: "true"
   CDVIZ_COLLECTOR__SINKS__CDVIZ_DB__URL:
     valueFrom:
       secretKeyRef:
@@ -23,3 +27,6 @@ extraObjects:
         {{ $.Values.secrets.DATABASE_URL | default (printf "postgres://%s:%s@%s:%s/%s" $.Values.secrets.CDVIZ_COLLECTOR_POSTGRES_USER $.Values.secrets.CDVIZ_COLLECTOR_POSTGRES_PASSWORD $.Values.secrets.CDVIZ_COLLECTOR_POSTGRES_HOST $.Values.secrets.POSTGRES_PORT_NUMBER $.Values.secrets.POSTGRES_DB) | b64enc }}
       GITHUB_WEBHOOK_SIGNATURE_TOKEN: |-
         {{ $.Values.secrets.GITHUB_WEBHOOK_SIGNATURE_TOKEN | default (randAlphaNum 32) | b64enc }}
+
+kubewatch:
+  enabled: true

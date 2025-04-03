@@ -1,5 +1,5 @@
 project: cdviz-dev
-version: "0.41.1"
+version: "0.41.9"
 
 registries:
   - host: ghcr.io
@@ -10,8 +10,8 @@ repositories:
     name: cnpg
   - url: https://grafana.github.io/helm-charts
     name: grafana
-  - name: robusta
-    url: https://robusta-charts.storage.googleapis.com
+  # - name: robusta
+  #   url: https://robusta-charts.storage.googleapis.com
 
 .options: &options
   create_namespace: true
@@ -27,7 +27,7 @@ releases:
     namespace: grafana
     chart:
       name: grafana/grafana
-      version: 8.8.1
+      version: 8.11.2
     values:
       - ./values/grafana.yaml
     <<: *options
@@ -38,7 +38,7 @@ releases:
     namespace: cnpg
     chart:
       name: cnpg/cloudnative-pg
-      version: 0.22.1
+      version: 0.23.2
     <<: *options
     tags:
       - db
@@ -101,13 +101,13 @@ releases:
         strict: true
     tags:
       - cdviz
-  - name: kubewatch
-    namespace: kubewatch
-    chart: robusta/kubewatch
-    <<: *options
-    values:
-      - src: values/kubewatch.yaml
-        renderer: copy
-        strict: true
-    tags:
-      - integration
+  # - name: kubewatch
+  #   namespace: kubewatch
+  #   chart: robusta/kubewatch
+  #   <<: *options
+  #   values:
+  #     - src: values/kubewatch.yaml
+  #       renderer: copy
+  #       strict: true
+  #   tags:
+  #     - integration

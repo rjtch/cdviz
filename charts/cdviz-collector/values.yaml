@@ -8,7 +8,7 @@ image:
   repository: ghcr.io/cdviz-dev/cdviz-collector
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "0.6.3"
+  tag: "0.6.4"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -105,29 +105,56 @@ configFiles:
     [sinks.debug]
     enabled = true
 
-    # [sinks.cdviz_db]
-    # enabled = true
+    [sinks.cdviz_db]
+    enabled = false
 
-    # [sources.cdevents_webhook]
-    # enabled = false
+    [sources.cdevents_webhook]
+    enabled = false
 
-    # [sources.cdevents_webhook.extractor]
-    # type = "webhook"
-    # id = "000"
+    [sources.cdevents_webhook.extractor]
+    type = "webhook"
+    id = "000-cdevents"
 
-    # [sources.github_webhook]
-    # enabled = true
-    # transformers_ref = [ "github_events" ]
+    [sources.github_webhook]
+    enabled = false
+    transformer_refs = [ "github_events" ]
 
-    # [sources.github_webhook.extractor]
-    # type = "webhook"
-    # id = "001"
-    # headers_to_keep = []
-    # signature = { signature_encoding = "hex", signature_on = "body", signature_prefix = "sha256=", header = "x-hub-signature-256", token = "changeme" }
+    [sources.github_webhook.extractor]
+    type = "webhook"
+    id = "000-github"
+    headers_to_keep = []
+    signature = { signature_encoding = "hex", signature_on = "body", signature_prefix = "sha256=", header = "x-hub-signature-256", token = "changeme" }
 
-    # [transformers.github_events]
-    # type = "vrl"
-    # template_file = "/etc/cdviz-collector/transformers/github_events.vrl"
+    [transformers.github_events]
+    type = "vrl"
+    template_file = "/etc/cdviz-collector/transformers/github_events.vrl"
+
+    [sources.kubewatch_webhook]
+    enabled = {{ $.Values.kubewatch.enabled }}
+    # transformer_refs = [ "log", "kubewatch_metadata", "kubewatch_cloudevents" ]
+    transformer_refs = [ "kubewatch_metadata", "kubewatch_cloudevents" ]
+
+    [sources.kubewatch_webhook.extractor]
+    type = "webhook"
+    id = "000-kubewatch"
+
+    [transformers.kubewatch_metadata]
+    type = "vrl"
+    template = """
+    .metadata = object(.metadata) ?? {}
+
+    [{
+      "metadata": merge(.metadata, {
+        "environment_id": "cluster/A-dev",
+      }),
+      "header": .header,
+      "body": .body,
+    }]
+    """
+
+    [transformers.kubewatch_cloudevents]
+    type = "vrl"
+    template_file = "/etc/cdviz-collector/transformers/kubewatch_cloudevents.vrl"
 
 log:
   level: info # debug, info, warn, error
@@ -188,7 +215,45 @@ extraObjects: {}
   #             port: port: 8080 # see service.port
   #             weight: 1
   #         matches:
-  #           # no strip, bind the gateway's `/webhook/*` to cdviz-collector's `/webhook/*` (and hide other endpoints)
+  #           # no strip, bind the gateway's `/webhook/*` to cdviz-collector's some `/webhook/...` (and hide other endpoints)
+  #           # Before allow wildcard (eg. with just `/webhook/`), check that every endpoint has
+  #           # some kind of authentication/security (before (or via) the gateway or via the collector)
   #           - path:
   #               type: PathPrefix
-  #               value: /webhook/
+  #               value: /webhook/000-github
+
+kubewatch:
+  enabled: true
+  rbac:
+    create: true
+  resourcesToWatch:
+    deployment: true
+    daemonset: true
+    statefulset: true
+    replicationcontroller: false
+    replicaset: false
+    services: false
+    pod: false
+    job: false
+    node: false
+    clusterrole: false
+    clusterrolebinding: false
+    serviceaccount: false
+    persistentvolume: false
+    namespace: false
+    secret: false
+    configmap: false
+    ingress: false
+    coreevent: false
+    event: false
+
+  ## Seems like only one handler could be enabled at a time
+
+  slack:
+    enabled: false # true by default
+
+  # cloudevent include the webhook's data + manifest of the resource + ... use by the template
+  cloudevent:
+    enabled: true
+    # update the name to match the name of the service (if not cdviz-collector)
+    url: "http://cdviz-collector:8080/webhook/000-kubewatch"
