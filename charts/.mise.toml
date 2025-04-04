@@ -50,17 +50,19 @@ fi
 APP_VERSION=$(git describe --always "$MODULE_SRC_HASH")
 
 VERSION=$(git describe --always "$CHART_SRC_HASH")
-if not git merge-base --is-ancestor "$MODULE_SRC_HASH" "$CHART_SRC_HASH"; then
+if ! git merge-base --is-ancestor "$MODULE_SRC_HASH" "$CHART_SRC_HASH" &>/dev/null ; then
     VERSION="$APP_VERSION"
 fi
 
 echo "$MODULE, VERSION: $VERSION, APP_VERSION: $APP_VERSION"
 
-# build & publish chart as oci
-# set version in Chart.yaml & values.yaml (using go-yq) not needed because the version of the image is set to appVersion, and the version (& appVersion) are set via cli during the package
-helm dependency build "${MODULE}"
-helm package -d build "${MODULE}" --app-version "$APP_VERSION" --version "$VERSION"
-helm push "build/${MODULE}-${VERSION}.tgz" oci://ghcr.io/cdviz-dev/charts
+if ! helm show chart "oci://ghcr.io/cdviz-dev/charts/${MODULE}" --version "$VERSION" &> /dev/null ; then
+  # build & publish chart as oci
+  # set version in Chart.yaml & values.yaml (using go-yq) not needed because the version of the image is set to appVersion, and the version (& appVersion) are set via cli during the package
+  helm dependency build "${MODULE}"
+  helm package -d build "${MODULE}" --app-version "$APP_VERSION" --version "$VERSION"
+  helm push "build/${MODULE}-${VERSION}.tgz" oci://ghcr.io/cdviz-dev/charts
+done
 """
 
 [tasks."publish:cdviz-collector"]
