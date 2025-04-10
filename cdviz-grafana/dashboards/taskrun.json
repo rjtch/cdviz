@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 5,
+  "id": 2,
   "links": [],
   "panels": [
     {
@@ -32,8 +32,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -66,7 +65,7 @@
         "styles": "",
         "wrap": true
       },
-      "pluginVersion": "5.6.0",
+      "pluginVersion": "5.7.0",
       "repeat": "taskName",
       "repeatDirection": "h",
       "targets": [
@@ -78,7 +77,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select \n  LEAST(started_at, finished_at) AS at,\n  subject_id AS subject_id,\n  extract('epoch' from (finished_at  - started_at)) AS run_duration,\n  -- \n  last_payload -> 'subject' -> 'content' ->> 'url' AS url,\n  outcome AS outcome\n  FROM taskrun\n  WHERE \n    ($__timeFilter(started_at) OR $__timeFilter(finished_at))\n    AND taskrun.last_payload -> 'subject' -> 'content' ->> 'taskName' IN (${taskName:sqlstring})\n  ORDER BY at ASC\n  LIMIT $limit\n;",
+          "rawSql": "select \n  LEAST(started_at, finished_at) AS at,\n  subject_id AS subject_id,\n  extract('epoch' from (finished_at  - started_at)) AS run_duration,\n  -- \n  last_payload -> 'subject' -> 'content' ->> 'url' AS url,\n  outcome AS outcome\n  FROM taskrun\n  WHERE \n    ($__timeFilter(started_at) OR $__timeFilter(finished_at))\n    AND taskrun.last_payload -> 'subject' -> 'content' ->> 'taskName' = ANY(ARRAY[${taskNames:sqlstring}]::text[])\n  ORDER BY at ASC\n  LIMIT $limit\n;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -99,13 +98,13 @@
           }
         }
       ],
-      "title": "$taskName",
+      "title": "$taskNames",
       "type": "marcusolsson-dynamictext-panel"
     }
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": [
@@ -135,7 +134,7 @@
         "includeAll": true,
         "label": "Tasks",
         "multi": true,
-        "name": "taskName",
+        "name": "taskNames",
         "options": [],
         "query": "SELECT DISTINCT payload -> 'subject' -> 'content' ->> 'taskName' AS task\nFROM cdevents_lake\nWHERE $__timeFilter(timestamp)\nAND subject = 'taskrun'\nORDER BY task",
         "refresh": 1,
@@ -163,6 +162,5 @@
   "timezone": "browser",
   "title": "tasks",
   "uid": "taskrun",
-  "version": 2025031221,
-  "weekStart": ""
+  "version": 2025041021
 }

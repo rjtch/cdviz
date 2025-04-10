@@ -43,4 +43,3 @@ Maybe with some overlap:
 
 - See [ROADMAP.md](ROADMAP.md)
 - See [Issues · cdviz-dev/cdviz](https://github.com/cdviz-dev/cdviz/issues) and use it to discuss features, ideas, bugs,...
-

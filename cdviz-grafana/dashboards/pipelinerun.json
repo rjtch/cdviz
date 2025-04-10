@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 5,
   "links": [],
   "panels": [
     {
@@ -45,8 +45,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               }
             ]
           }
@@ -79,7 +78,7 @@
         "styles": "",
         "wrap": false
       },
-      "pluginVersion": "5.6.0",
+      "pluginVersion": "5.7.0",
       "repeat": "pipelineName",
       "repeatDirection": "h",
       "targets": [
@@ -91,7 +90,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "select \n  LEAST(queued_at, started_at, finished_at) AS at,\n  subject_id AS subject_id,\n  extract('epoch' from (started_at - queued_at)) AS queued_duration,\n  extract('epoch' from (finished_at  - started_at)) AS run_duration,\n  -- \n  last_payload -> 'subject' -> 'content' ->> 'url' AS url,\n  outcome AS outcome\n  FROM pipelinerun\n  WHERE \n    ($__timeFilter(queued_at) OR $__timeFilter(finished_at))\n    AND last_payload -> 'subject' -> 'content' ->> 'pipelineName' IN (${pipelineName:sqlstring})\n  ORDER BY at DESC\n  LIMIT $limit\n;",
+          "rawSql": "select \n  LEAST(queued_at, started_at, finished_at) AS at,\n  subject_id AS subject_id,\n  extract('epoch' from (started_at - queued_at)) AS queued_duration,\n  extract('epoch' from (finished_at  - started_at)) AS run_duration,\n  -- \n  last_payload -> 'subject' -> 'content' ->> 'url' AS url,\n  outcome AS outcome\n  FROM pipelinerun\n  WHERE \n    ($__timeFilter(queued_at) OR $__timeFilter(finished_at))\n    AND last_payload -> 'subject' -> 'content' ->> 'pipelineName' = ANY(ARRAY[${pipelineNames:sqlstring}]::text[]))\n  ORDER BY at DESC\n  LIMIT $limit\n;",
           "refId": "A",
           "sql": {
             "columns": [
@@ -112,13 +111,13 @@
           }
         }
       ],
-      "title": "$pipelineName",
+      "title": "$pipelineNames",
       "type": "marcusolsson-dynamictext-panel"
     }
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": [
@@ -137,14 +136,8 @@
       {
         "allowCustomValue": true,
         "current": {
-          "text": [
-            "ci",
-            "ci-s"
-          ],
-          "value": [
-            "ci",
-            "ci-s"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "datasource": {
           "type": "grafana-postgresql-datasource",
@@ -154,7 +147,7 @@
         "includeAll": true,
         "label": "Pipelines",
         "multi": true,
-        "name": "pipelineName",
+        "name": "pipelineNames",
         "options": [],
         "query": "SELECT DISTINCT payload -> 'subject' -> 'content' ->> 'pipelineName' AS pipeline\nFROM cdevents_lake\nWHERE \n$__timeFilter(timestamp)\nAND subject = 'pipelinerun'\nORDER BY pipeline",
         "refresh": 1,
@@ -183,6 +176,5 @@
   "timezone": "browser",
   "title": "pipelines",
   "uid": "pipelinerun",
-  "version": 2025031221,
-  "weekStart": ""
+  "version": 2025041021
 }
