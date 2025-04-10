@@ -1,0 +1,905 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            2
+          ]
+        },
+        "hide": false,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "mappings": {
+          "id": {
+            "source": "field",
+            "value": "name"
+          },
+          "tags": {
+            "source": "field",
+            "value": "tags"
+          },
+          "text": {
+            "source": "field",
+            "value": "text"
+          },
+          "time": {
+            "source": "field",
+            "value": "time"
+          },
+          "title": {
+            "source": "field",
+            "value": "title"
+          }
+        },
+        "name": "services deployment",
+        "target": {
+          "editorMode": "code",
+          "format": "table",
+          "limit": 100,
+          "matchAny": false,
+          "rawQuery": true,
+          "rawSql": "-- TODO extract version, filter by environment, filter by service\nSELECT\n  timestamp as time,\n  predicate, payload -> 'subject' ->> 'id' as title,\n  array_to_string(\n    ARRAY[\n      'event:'|| subject || '.' || predicate,\n      'environment:'|| (payload -> 'subject' -> 'content' -> 'environment' ->> 'id'),\n      'service:'|| (payload -> 'subject' ->> 'id')\n    ], ','\n  ) as tags,\n  payload -> 'subject' -> 'content' ->> 'artifactId' as text\nFROM cdevents_lake\nWHERE $__timeFilter(timestamp)\nAND subject = 'service' AND predicate IN ('deployed', 'upgraded', 'rolledback')\nAND payload -> 'subject' -> 'content' -> 'environment' ->> 'id' = ANY(ARRAY[${environments:sqlstring}]::text[])\nAND payload -> 'subject' ->> 'id' = ANY(ARRAY[${services:sqlstring}]::text[])  \n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "cdevents_lake",
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "filter": {
+          "exclude": false,
+          "ids": [
+            2
+          ]
+        },
+        "hide": false,
+        "iconColor": "red",
+        "mappings": {
+          "tags": {
+            "source": "field",
+            "value": "tags"
+          },
+          "text": {
+            "source": "field",
+            "value": "text"
+          },
+          "time": {
+            "source": "field",
+            "value": "timestamp"
+          },
+          "title": {
+            "source": "field",
+            "value": "title"
+          }
+        },
+        "name": "incidents",
+        "target": {
+          "editorMode": "code",
+          "format": "table",
+          "limit": 100,
+          "matchAny": false,
+          "rawQuery": true,
+          "rawSql": "-- TODO extract version, filter by environment, filter by service\nselect timestamp as time,\n  payload -> 'subject' ->> 'id' as title,\n  array_to_string(\n    ARRAY[\n      'event:'|| subject || '.' || predicate,\n      'environment:'|| (payload -> 'subject' -> 'content' -> 'environment' ->> 'id'),\n      'service:'|| (payload -> 'subject' -> 'content' -> 'service' ->> 'id')\n    ], ','\n  ) as tags,\n  -- payload -> 'subject' -> 'content' -> 'environment' ->> 'id' as environment,\n  -- payload -> 'subject' -> 'content' -> 'service' ->> 'id' as service,\n  -- payload -> 'subject' -> 'content' ->> 'artifactId' as artifact,\n  payload -> 'subject' -> 'content' ->> 'ticketURI' as text\nFROM cdevents_lake\nWHERE $__timeFilter(timestamp)\nAND subject = 'incident' AND predicate IN ('detected', 'reported')\nAND payload -> 'subject' -> 'content' -> 'environment' ->> 'id' = ANY(ARRAY[${environments:sqlstring}]::text[])\nAND payload -> 'subject' -> 'content' -> 'service' ->> 'id' = ANY(ARRAY[${services:sqlstring}]::text[])\n  \n",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "tags": [],
+          "type": "dashboard"
+        }
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 4,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.6.0",
+      "targets": [
+        {
+          "refId": "A"
+        }
+      ],
+      "title": "Panel Title",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "cdviz-db"
+      },
+      "description": "Send a service event",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 1,
+      "options": {
+        "buttonGroup": {
+          "orientation": "right",
+          "size": "md"
+        },
+        "confirmModal": {
+          "body": "Please confirm to update changed values",
+          "cancel": "Cancel",
+          "columns": {
+            "include": [
+              "name",
+              "oldValue",
+              "newValue"
+            ],
+            "name": "Label",
+            "newValue": "New Value",
+            "oldValue": "Old Value"
+          },
+          "confirm": "Confirm",
+          "elementDisplayMode": "modified",
+          "title": "Confirm update request"
+        },
+        "elementValueChanged": "",
+        "elements": [
+          {
+            "hidden": false,
+            "id": "subject_id",
+            "labelWidth": 10,
+            "section": "",
+            "title": "Service",
+            "tooltip": "",
+            "type": "string",
+            "uid": "b5b66daa-cf00-497f-9931-3de208b2e7cc",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "allowCustomValue": false,
+            "id": "predicate",
+            "labelWidth": 10,
+            "options": [
+              {
+                "id": "published",
+                "label": "published",
+                "type": "string",
+                "value": "published"
+              },
+              {
+                "id": "deployed",
+                "label": "deployed",
+                "type": "string",
+                "value": "deployed"
+              },
+              {
+                "id": "upgraded",
+                "label": "upgraded",
+                "type": "string",
+                "value": "upgraded"
+              },
+              {
+                "id": "rolledback",
+                "label": "rolledback",
+                "type": "string",
+                "value": "rolledback"
+              },
+              {
+                "id": "removed",
+                "label": "removed",
+                "type": "string",
+                "value": "removed"
+              }
+            ],
+            "optionsSource": "Custom",
+            "section": "",
+            "title": "Action",
+            "tooltip": "",
+            "type": "radio",
+            "uid": "f48537c7-52d5-4740-96d1-69d879822473",
+            "unit": "",
+            "value": []
+          },
+          {
+            "disableIf": "return context.panel.elements.some((element) => {\n  // value could be null, undefined, ''\n  return (element.id == 'predicate') && (!['deployed', 'upgraded', 'rolledback'].includes(element.value))\n});\n",
+            "hidden": false,
+            "id": "artifact_id",
+            "labelWidth": 10,
+            "section": "",
+            "showIf": "",
+            "title": "Artifact",
+            "tooltip": "format: purl",
+            "type": "string",
+            "uid": "ac0f38e0-581c-4af2-a6df-36aa1ee2461b",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "hidden": false,
+            "id": "environment_id",
+            "labelWidth": 10,
+            "section": "",
+            "title": "Environment",
+            "tooltip": "",
+            "type": "string",
+            "uid": "30d16172-5072-48e0-a1f3-3c5d4912886e",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "id": "timestamp",
+            "isUseLocalTime": false,
+            "labelWidth": 10,
+            "min": "",
+            "section": "",
+            "title": "Timestamp",
+            "tooltip": "",
+            "type": "datetime",
+            "uid": "e8f9aa91-aac8-44cc-a443-c365d89042d1",
+            "unit": "",
+            "value": ""
+          }
+        ],
+        "initial": {
+          "code": "context.panel.patchFormValue({ timestamp: new Date().toISOString() });\nreturn;",
+          "contentType": "application/json",
+          "getPayload": "return {}",
+          "highlight": false,
+          "highlightColor": "red",
+          "method": "-",
+          "payload": {}
+        },
+        "layout": {
+          "orientation": "horizontal",
+          "padding": 10,
+          "sectionVariant": "default",
+          "variant": "single"
+        },
+        "reset": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "process",
+          "text": "Reset",
+          "variant": "secondary"
+        },
+        "resetAction": {
+          "code": "if (context.panel.response) {\n  context.grafana.notifySuccess(['Update', 'Values updated successfully.']);\n  context.grafana.refresh();\n} else {\n  context.grafana.notifyError(['Update', 'An error occurred updating values.']);\n}",
+          "confirm": false,
+          "getPayload": "return {}",
+          "mode": "initial",
+          "payload": {}
+        },
+        "saveDefault": {
+          "icon": "save",
+          "text": "Save Default",
+          "variant": "hidden"
+        },
+        "submit": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "cloud-upload",
+          "text": "Send",
+          "variant": "primary"
+        },
+        "sync": true,
+        "update": {
+          "code": "/**\n * Set body / payload\n */\ntry {\n  const payload = {\n    \"context\": {\n      \"version\": \"0.4.1\",\n      \"id\": \"0\", // automatically set by cdviz-collector\n      \"source\": \"/manual/\",\n      \"type\": \"dev.cdevents.service.deployed.0.2.0\",\n      \"timestamp\": \"\",\n    },\n    \"subject\": {\n      \"id\": \"\",\n      // \"source\": \"/event/source/123\",\n      \"type\": \"service\",\n      \"content\": {\n        \"environment\": {\n          \"id\": \"\"\n        }\n        // \"artifactId\": null // unset for published & removed\n      }\n    }\n  };\n  context.panel.elements.forEach((element) => {\n    if (!element.value) {\n      return;\n    }\n    //TODO check format,....\n    switch (element.id) {\n      case \"subject_id\":\n        payload.subject.id = element.value;\n        break;\n      case \"predicate\":\n        payload.context.type = `dev.cdevents.service.${element.value}.0.2.0`;\n        break;\n      case \"artifact_id\":\n        payload.subject.content.artifactId = element.value;\n        break;\n      case \"environment_id\":\n        payload.subject.content.environment.id = element.value;\n        break;\n      case \"timestamp\":\n        payload.context.timestamp = element.value;\n        break;\n    }\n  })\n  let ts = new Date(payload.context.timestamp) || Date.now();\n  payload.context.timestamp = ts.toISOString();\n  //console.log(payload);\n\n  /**\n  * Set URL\n  */\n  const url = context.grafana.templateService.getVariables().find((x) => x.name == 'collectorUrl').query;\n\n  /**\n  * Fetch\n  */\n  const resp = fetch(url, {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n      // \"PRIVATE-TOKEN\": \"$token\",\n    },\n    body: JSON.stringify(payload),\n  })\n    .catch((error) => {\n      //console.error(error);\n      context.grafana.notifyError(['Error on Update', error]);\n      //context.grafana.refresh();\n    })\n    .then((resp) => {\n      //console.log(resp);\n      if (resp && resp.ok) {\n        context.grafana.notifySuccess(['Update', 'Event sent successfully.']);\n        context.grafana.refresh();\n      } else {\n        context.grafana.notifyError(['Update', 'An error occurred sending event.']);\n        //context.grafana.refresh();\n      }\n    });\n} catch (error) {\n  // console.error(error);\n  context.grafana.notifyError(['Error on Update', error]);\n}\n",
+          "confirm": false,
+          "contentType": "application/json",
+          "getPayload": "",
+          "method": "-",
+          "payload": {},
+          "payloadMode": "custom"
+        },
+        "updateEnabled": "auto"
+      },
+      "pluginVersion": "5.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "cdviz-db"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Services",
+      "type": "volkovlabs-form-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "cdviz-db"
+      },
+      "description": "Send an incident event",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 3,
+      "options": {
+        "buttonGroup": {
+          "orientation": "right",
+          "size": "md"
+        },
+        "confirmModal": {
+          "body": "Please confirm to update changed values",
+          "cancel": "Cancel",
+          "columns": {
+            "include": [
+              "name",
+              "oldValue",
+              "newValue"
+            ],
+            "name": "Label",
+            "newValue": "New Value",
+            "oldValue": "Old Value"
+          },
+          "confirm": "Confirm",
+          "elementDisplayMode": "modified",
+          "title": "Confirm update request"
+        },
+        "elementValueChanged": "",
+        "elements": [
+          {
+            "hidden": false,
+            "id": "subject_id",
+            "labelWidth": 10,
+            "section": "",
+            "title": "Incident",
+            "tooltip": "",
+            "type": "string",
+            "uid": "b5b66daa-cf00-497f-9931-3de208b2e7cc",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "allowCustomValue": false,
+            "id": "predicate",
+            "labelWidth": 10,
+            "options": [
+              {
+                "id": "detected",
+                "label": "detected",
+                "type": "string",
+                "value": "detected"
+              },
+              {
+                "id": "reported",
+                "label": "reported",
+                "type": "string",
+                "value": "reported"
+              },
+              {
+                "id": "resolved",
+                "label": "resolved",
+                "type": "string",
+                "value": "resolved"
+              }
+            ],
+            "optionsSource": "Custom",
+            "section": "",
+            "title": "Action",
+            "tooltip": "",
+            "type": "radio",
+            "uid": "f48537c7-52d5-4740-96d1-69d879822473",
+            "unit": "",
+            "value": []
+          },
+          {
+            "id": "description",
+            "labelWidth": 10,
+            "rows": 10,
+            "section": "",
+            "title": "Description",
+            "tooltip": "",
+            "type": "textarea",
+            "uid": "ec4f7425-998f-48a2-9540-25e1035a898e",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "hidden": false,
+            "id": "environment_id",
+            "labelWidth": 10,
+            "section": "",
+            "title": "Environment",
+            "tooltip": "",
+            "type": "string",
+            "uid": "30d16172-5072-48e0-a1f3-3c5d4912886e",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "hidden": false,
+            "id": "service_id",
+            "labelWidth": 10,
+            "section": "",
+            "title": "Service",
+            "tooltip": "",
+            "type": "string",
+            "uid": "6f6069a8-9bc0-4876-bc13-b495ae47cf34",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "hidden": false,
+            "id": "artifact_id",
+            "labelWidth": 10,
+            "section": "",
+            "title": "Artifact",
+            "tooltip": "format: purl",
+            "type": "string",
+            "uid": "ac0f38e0-581c-4af2-a6df-36aa1ee2461b",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "disableIf": "return context.panel.elements.some((element) => {\n  return (element.id == 'predicate') && (element.value != 'reported')\n});\n",
+            "hidden": false,
+            "id": "ticketURI",
+            "labelWidth": 10,
+            "section": "",
+            "title": "ticketURI",
+            "tooltip": "",
+            "type": "string",
+            "uid": "91f83c8e-804b-43f4-9b48-d34695b29b20",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "id": "timestamp",
+            "isUseLocalTime": false,
+            "labelWidth": 10,
+            "section": "",
+            "title": "Timestamp",
+            "tooltip": "",
+            "type": "datetime",
+            "uid": "e8f9aa91-aac8-44cc-a443-c365d89042d1",
+            "unit": "",
+            "value": ""
+          }
+        ],
+        "initial": {
+          "code": "context.panel.patchFormValue({ timestamp: new Date().toISOString() });\nreturn;",
+          "contentType": "application/json",
+          "getPayload": "return {}",
+          "highlight": false,
+          "highlightColor": "red",
+          "method": "-",
+          "payload": {}
+        },
+        "layout": {
+          "orientation": "horizontal",
+          "padding": 10,
+          "sectionVariant": "default",
+          "sections": [
+            {
+              "id": "",
+              "name": ""
+            }
+          ],
+          "variant": "single"
+        },
+        "reset": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "process",
+          "text": "Reset",
+          "variant": "secondary"
+        },
+        "resetAction": {
+          "code": "if (context.panel.response) {\n  context.grafana.notifySuccess(['Update', 'Values updated successfully.']);\n  context.grafana.refresh();\n} else {\n  context.grafana.notifyError(['Update', 'An error occurred updating values.']);\n}",
+          "confirm": false,
+          "getPayload": "return {}",
+          "mode": "initial",
+          "payload": {}
+        },
+        "saveDefault": {
+          "icon": "save",
+          "text": "Save Default",
+          "variant": "hidden"
+        },
+        "submit": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "cloud-upload",
+          "text": "Send",
+          "variant": "primary"
+        },
+        "sync": true,
+        "update": {
+          "code": "/**\n * Set body / payload\n */\ntry {\n  const payload = {\n    \"context\": {\n      \"version\": \"0.4.1\",\n      \"id\": \"0\", // automatically set by cdviz-collector\n      \"source\": \"/manual/\",\n      \"type\": \"dev.cdevents.service.deployed.0.2.0\",\n      \"timestamp\": \"\",\n    },\n    \"subject\": {\n      \"id\": \"\",\n      // \"source\": \"/event/source/123\",\n      \"type\": \"incident\",\n      \"content\": {\n        \"description\": \"\",\n        \"environment\": {\n          \"source\": \"/manual/\",\n          \"id\": \"\"\n        },\n        \"service\": {\n          \"source\": \"/manual/\",\n          \"id\": \"\"\n        },\n        \"artifactId\": null,\n        \"ticketURI\": null  // unset for detected & resolved\n      }\n    }\n  };\n  context.panel.elements.forEach((element) => {\n    if (!element.value) {\n      return;\n    }\n    //TODO check format,...\n    switch (element.id) {\n      case \"subject_id\":\n        payload.subject.id = element.value;\n        break;\n      case \"predicate\":\n        payload.context.type = `dev.cdevents.incident.${element.value}.0.2.0`;\n        break;\n      case \"artifact_id\":\n        payload.subject.content.artifactId = element.value;\n        break;\n      case \"environment_id\":\n        payload.subject.content.environment.id = element.value;\n        break;\n      case \"service_id\":\n        payload.subject.content.service.id = element.value;\n        break;\n      case \"description\":\n        payload.subject.content.description = element.value;\n        break;\n      case \"ticketURI\":\n        payload.subject.content.ticketURI = element.value;\n        break;\n      case \"timestamp\":\n        payload.context.timestamp = element.value;\n        break;\n    }\n  });\n  let ts = new Date(payload.context.timestamp) || Date.now();\n  payload.context.timestamp = ts.toISOString();\n  //console.log(payload);\n\n  /**\n  * Set URL\n  */\n  const url = context.grafana.templateService.getVariables().find((x) => x.name == 'collectorUrl').query;\n\n  /**\n  * Fetch\n  */\n  const resp = fetch(url, {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n      // \"PRIVATE-TOKEN\": \"$token\",\n    },\n    body: JSON.stringify(payload),\n  })\n    .catch((error) => {\n      //console.error(error);\n      context.grafana.notifyError(['Error on Update', error]);\n      //context.grafana.refresh();\n    })\n    .then((resp) => {\n      //console.log(resp);\n      if (resp && resp.ok) {\n        context.grafana.notifySuccess(['Update', 'Event sent successfully.']);\n        context.grafana.refresh();\n      } else {\n        context.grafana.notifyError(['Update', 'An error occurred sending event.']);\n        //context.grafana.refresh();\n      }\n    });\n} catch (error) {\n  // console.error(error);\n  context.grafana.notifyError(['Error on Update', error]);\n}\n",
+          "confirm": false,
+          "contentType": "application/json",
+          "getPayload": "",
+          "method": "-",
+          "payload": {},
+          "payloadMode": "custom"
+        },
+        "updateEnabled": "auto"
+      },
+      "pluginVersion": "5.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "cdviz-db"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "Incidents",
+      "type": "volkovlabs-form-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "cdviz-db"
+      },
+      "description": "Send a raw json event",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 4,
+      "options": {
+        "buttonGroup": {
+          "orientation": "right",
+          "size": "md"
+        },
+        "confirmModal": {
+          "body": "Please confirm to update changed values",
+          "cancel": "Cancel",
+          "columns": {
+            "include": [
+              "name",
+              "oldValue",
+              "newValue"
+            ],
+            "name": "Label",
+            "newValue": "New Value",
+            "oldValue": "Old Value"
+          },
+          "confirm": "Confirm",
+          "elementDisplayMode": "modified",
+          "title": "Confirm update request"
+        },
+        "elementValueChanged": "",
+        "elements": [
+          {
+            "height": 200,
+            "id": "payload",
+            "labelWidth": 10,
+            "language": "json",
+            "section": "",
+            "title": "Payload",
+            "tooltip": "",
+            "type": "code",
+            "uid": "69e75378-0075-4fe8-92a5-9a9441e31d70",
+            "unit": "",
+            "value": ""
+          },
+          {
+            "allowCustomValue": false,
+            "id": "override",
+            "labelWidth": 10,
+            "options": [
+              {
+                "id": "context_timestamp",
+                "label": "context.timestamp with now",
+                "type": "string",
+                "value": "context_timestamp"
+              },
+              {
+                "id": "context_id",
+                "label": "context.id generated",
+                "type": "string",
+                "value": "context_id"
+              }
+            ],
+            "optionsSource": "Custom",
+            "section": "",
+            "title": "Override",
+            "tooltip": "",
+            "type": "checkboxList",
+            "uid": "5e8399c4-9a29-4a3a-a0ec-1bec0e52aaca",
+            "unit": "",
+            "value": []
+          }
+        ],
+        "initial": {
+          "code": "",
+          "contentType": "application/json",
+          "getPayload": "return {}",
+          "highlight": false,
+          "highlightColor": "red",
+          "method": "-",
+          "payload": {}
+        },
+        "layout": {
+          "orientation": "horizontal",
+          "padding": 10,
+          "sectionVariant": "default",
+          "variant": "single"
+        },
+        "reset": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "process",
+          "text": "Reset",
+          "variant": "secondary"
+        },
+        "resetAction": {
+          "code": "if (context.panel.response) {\n  context.grafana.notifySuccess(['Update', 'Values updated successfully.']);\n  context.grafana.refresh();\n} else {\n  context.grafana.notifyError(['Update', 'An error occurred updating values.']);\n}",
+          "confirm": false,
+          "getPayload": "return {}",
+          "mode": "initial",
+          "payload": {}
+        },
+        "saveDefault": {
+          "icon": "save",
+          "text": "Save Default",
+          "variant": "hidden"
+        },
+        "submit": {
+          "backgroundColor": "purple",
+          "foregroundColor": "yellow",
+          "icon": "cloud-upload",
+          "text": "Send",
+          "variant": "primary"
+        },
+        "sync": false,
+        "update": {
+          "code": "/**\n * Set body / payload\n */\ntry {\n  let payload = {};\n\n  context.panel.elements.forEach((element) => {\n    if (element.id == 'payload') {\n      payload = JSON.parse(element.value);\n    }\n  });\n\n  // override should run after payload read\n  context.panel.elements.forEach((element) => {\n    if (element.id == 'override') {\n      console.log(element);\n      if (element.value.includes('context_timestamp')) {\n        const ts = new Date();\n        payload.context.timestamp = ts.toISOString();\n      }\n      if (element.value.includes('context_id')) {\n        // let the cdviz-collector generate the id\n        payload.context.id = \"0\"\n      }\n    }\n  });\n\n  //TODO manage error\n  //console.log(context.panel.response);\n\n\n  /**\n  * Set URL\n  */\n  const url = context.grafana.templateService.getVariables().find((x) => x.name == 'collectorUrl').query;\n\n  /**\n  * Fetch\n  */\n  const resp = fetch(url, {\n    method: \"POST\",\n    headers: {\n      \"Content-Type\": \"application/json\",\n      // \"PRIVATE-TOKEN\": \"$token\",\n    },\n    body: JSON.stringify(payload),\n  })\n    .catch((error) => {\n      //console.error(error);\n      context.grafana.notifyError(['Error on Update', error]);\n      //context.grafana.refresh();\n    })\n    .then((resp) => {\n      //console.log(resp);\n      if (resp && resp.ok) {\n        context.grafana.notifySuccess(['Update', 'Event sent successfully.']);\n        context.grafana.refresh();\n      } else {\n        context.grafana.notifyError(['Update', 'An error occurred sending event.']);\n        //context.grafana.refresh();\n      }\n    });\n} catch (error) {\n  // console.error(error);\n  context.grafana.notifyError(['Error on Update', error]);\n}\n",
+          "confirm": false,
+          "contentType": "application/json",
+          "getPayload": "",
+          "header": [],
+          "method": "-",
+          "payload": {},
+          "payloadMode": "custom",
+          "url": "host:8080/webhook/000-cdevents"
+        },
+        "updateEnabled": "auto"
+      },
+      "pluginVersion": "5.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "cdviz-db"
+          },
+          "refId": "A"
+        }
+      ],
+      "title": "RAW",
+      "type": "volkovlabs-form-panel"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 41,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "cdviz-db",
+          "value": "cdviz-db"
+        },
+        "name": "datasource",
+        "options": [],
+        "query": "grafana-postgresql-datasource",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      },
+      {
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${datasource}"
+        },
+        "definition": "SELECT DISTINCT payload -> 'subject' ->> 'id' as service\nFROM cdevents_lake\nWHERE subject = 'service'\nAND  $__timeFilter(timestamp)\nUNION\nSELECT DISTINCT payload -> 'subject' -> 'content' -> 'service' ->> 'id' as service\nFROM cdevents_lake\nWHERE subject = 'incident'\nAND  $__timeFilter(timestamp)\n",
+        "includeAll": true,
+        "label": "Service Name",
+        "multi": true,
+        "name": "services",
+        "options": [],
+        "query": "SELECT DISTINCT payload -> 'subject' ->> 'id' as service\nFROM cdevents_lake\nWHERE subject = 'service'\nAND  $__timeFilter(timestamp)\nUNION\nSELECT DISTINCT payload -> 'subject' -> 'content' -> 'service' ->> 'id' as service\nFROM cdevents_lake\nWHERE subject = 'incident'\nAND  $__timeFilter(timestamp)\n",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "${datasource}"
+        },
+        "definition": "SELECT DISTINCT payload -> 'subject' -> 'content' -> 'environment' ->> 'id' as environment\nFROM cdevents_lake\nWHERE (subject = 'service' OR subject = 'incident')\nAND  $__timeFilter(timestamp)\n",
+        "includeAll": true,
+        "label": "Environment",
+        "multi": true,
+        "name": "environments",
+        "options": [],
+        "query": "SELECT DISTINCT payload -> 'subject' -> 'content' -> 'environment' ->> 'id' as environment\nFROM cdevents_lake\nWHERE (subject = 'service' OR subject = 'incident')\nAND  $__timeFilter(timestamp)\n",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "http://localhost:8080/webhook/000-cdevents",
+          "value": "http://localhost:8080/webhook/000-cdevents"
+        },
+        "label": "Collector URL",
+        "name": "collectorUrl",
+        "options": [
+          {
+            "selected": true,
+            "text": "http://localhost:8080/webhook/000-cdevents",
+            "value": "http://localhost:8080/webhook/000-cdevents"
+          }
+        ],
+        "query": "http://localhost:8080/webhook/000-cdevents",
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "demo for service annotations",
+  "uid": "demo-service-deployed",
+  "version": 2025041021
+}

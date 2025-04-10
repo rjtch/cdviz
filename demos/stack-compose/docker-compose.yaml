@@ -18,13 +18,13 @@ services:
     # network_mode: host
     ports:
       - "5432:5432"
-    user: "${MY_UID}:${MY_GID}"
-    volumes:
-      # In this example, we share the folder `db-data` in our root repository, with the default PostgreSQL data path
-      # It means that every time the repository is modifying the data inside
-      # of `/var/lib/postgresql/data/`, automatically the change will appear in `db-data`
-      # You don't need to create the `db-data` folder. Docker Compose will do it for you
-      - ./tmp/postgres/data:/var/lib/postgresql/data
+    # user: "${MY_UID}:${MY_GID}"
+    # volumes:
+      # # In this example, we share the folder `db-data` in our root repository, with the default PostgreSQL data path
+      # # It means that every time the repository is modifying the data inside
+      # # of `/var/lib/postgresql/data/`, automatically the change will appear in `db-data`
+      # # You don't need to create the `db-data` folder. Docker Compose will do it for you
+      # - ./tmp/postgres/data:/var/lib/postgresql/data
       # # In this example, we share an init.sql script with the container
       # # The init script will be executed when the database is first run
       # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -57,7 +57,7 @@ services:
       # see https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
       # To override an option, use a predefined pattern GF_<SectionName>_<KeyName>.
       # - GF_SERVER_ROOT_URL=http://my.grafana.server/
-      - GF_INSTALL_PLUGINS=marcusolsson-dynamictext-panel,volkovlabs-table-panel,volkovlabs-echarts-panel
+      - GF_INSTALL_PLUGINS=marcusolsson-dynamictext-panel,volkovlabs-form-panel,volkovlabs-table-panel
       # - GF_SECURITY_ADMIN_USER=admin
       # - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -77,10 +77,32 @@ services:
     ports:
       - "3000:3000"
     user: "${MY_UID}:${MY_GID}"
-    # user: "0"
     volumes:
       # - ./tmp/grafana/data/:/var/lib/grafana/:rw
       - ../../cdviz-grafana/datasources:/etc/grafana/provisioning/datasources:ro
       - ../../cdviz-grafana/dashboards:/var/provisioning/dashboards:rw
       - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
       # - ./tmp/grafana.ini:/etc/grafana/grafana.ini
+  cdviz-collector:
+    image: ghcr.io/cdviz-dev/cdviz-collector:latest
+    command:
+      - connect
+      - -vv
+      - --directory
+      - /var/use_cases
+      - --config
+      - ./cdviz-collector.toml
+    environment:
+      - CDVIZ_COLLECTOR__HTTP__PORT=8080
+      - CDVIZ_COLLECTOR__SINKS__DEBUG__ENABLED=true
+      - CDVIZ_COLLECTOR__SINKS__CDVIZ_DB__ENABLED=true
+      - CDVIZ_COLLECTOR__SINKS__CDVIZ_DB__URL=postgres://cdviz:postgres-password@postgres:5432/cdviz?sslmode=disable
+      - CDVIZ_COLLECTOR__SOURCES__CDEVENTS_WEBHOOK__ENABLED=true
+      - CDVIZ_COLLECTOR__SOURCES__CDEVENTS_WEBHOOK__EXTRACTOR__ID=000-cdevents
+    # network_mode: host
+    ports:
+      - "8080:8080"
+    user: "${MY_UID}:${MY_GID}"
+    volumes:
+      # - ./tmp/cdviz-collector:/var/cdviz-collector:ro
+      - ../use_cases:/var/use_cases:rw

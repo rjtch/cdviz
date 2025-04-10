@@ -17,10 +17,12 @@ depends = ["stack:*:delete"]
 description = "Launch the docker compose demo (in foreground)"
 dir = "stack-compose"
 run = """
-    mkdir -p tmp/postgres/data || true
+    # mkdir -p tmp/postgres/data || true
     export MY_UID=$(id -u)
     export MY_GID=$(id -g)
-    chown -R \"$MY_UID:$MY_GID\" tmp
+    # chown -R "$MY_UID:$MY_GID" tmp
+    echo "$MY_UID:$MY_GID"
+    docker compose -f docker-compose.yaml pull
     docker compose -f docker-compose.yaml up
     """
 
